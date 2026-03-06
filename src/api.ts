@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const generatePDF = (data: unknown) => {
-  return axios.post("http://localhost:5000/generate-pdf", data, {
+  return axios.post("https://timber-bill-generator-backend.onrender.com/generate-pdf", data, {
     responseType: "blob",
   });
 };
