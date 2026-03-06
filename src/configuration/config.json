@@ -1,0 +1,5 @@
+{
+    "apiConfig":{
+        "apiEndPoint":"https://timber-bill-generator-backend.onrender.com/"
+    }
+}
