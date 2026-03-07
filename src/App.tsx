@@ -16,13 +16,14 @@ import type { HeaderFormData, TimberRow } from "./types";
 
 export default function App() {
   const [form, setForm] = useState<HeaderFormData>({
-    millName: "",
-    millAddress: "",
-    gst: "",
-    date: "",
+    millName: "MS CHANDIMATA SAW MILL",
+    millAddress: "AT- Tikirapara, P.O. - Pratapdighi, Dist - Purba Medinipur",
+    treeName: "AKASHMONI SAWN TIMBER",
+    gst: "19BFXPM4216H2ZX",
+    date: new Date().toISOString().split("T")[0] || "", 
     ownerName: "",
     ownerAddress: "",
-    pickupNumber: "",
+    pickupNumber: "OD01AU3434",
   });
 
   const [rows, setRows] = useState<TimberRow[]>([

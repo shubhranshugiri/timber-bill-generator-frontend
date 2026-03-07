@@ -14,4 +14,5 @@ export interface HeaderFormData {
   ownerName: string;
   ownerAddress: string;
   pickupNumber: string;
+  treeName: string;
 }

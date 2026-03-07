@@ -3,129 +3,170 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 export const generatePDF = (data: any) => {
-  // A4 size: 210mm x 297mm. Positions are converted from PDFKit points to mm.
   const doc = new jsPDF("p", "mm", "a4");
-  const pageWidth = doc.internal.pageSize.getWidth(); // 210mm
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
 
-  // --- 1. Top Branding Header (#2c3e50) ---
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(22);
-  doc.setTextColor(44, 62, 80); // HEX #2c3e50
-  doc.text("AKASHMONI SAWN TIMBER", pageWidth / 2, 20, { align: "center" });
+  // Vibrant Branded Colors
+  const primaryColor = [30, 58, 138]; // Deep Royal Blue
+  const accentColor = [79, 70, 229];  // Indigo Vibrant
+  const highlightColor = [234, 88, 12]; // Vibrant Orange
 
-  // Branding Line
-  doc.setDrawColor(44, 62, 80);
-  doc.setLineWidth(0.5);
-  doc.line(15, 25, pageWidth - 15, 25);
-
-  // --- 2. Info Section (Mill & Owner) ---
-  const infoY = 35;
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "bold");
-  doc.text("MILL DETAILS:", 15, infoY);
+  const margin = 15;
+  const rowsPerPageFirst = 24; // Pehle page pe 48 (Details ki wajah se)
+  const rowsPerPageSubsequent = 32; // Baaki pages pe 64 (Details hatne ki wajah se)
   
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
-  doc.text(`Name: ${data.millName.toUpperCase()}`, 15, infoY + 5);
-  doc.text(`GSTIN: ${data.gst || "N/A"}`, 15, infoY + 10);
-  doc.text(`Address: ${data.millAddress}`, 15, infoY + 15, { maxWidth: 80 });
-  doc.text(`Date: ${data.date}`, 15, infoY + 25);
+  const totalItems = data.rows.length;
 
-  // Owner Details (Right Side)
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.text("OWNER DETAILS:", 125, infoY);
-  
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
-  doc.text(`Name: ${data.ownerName}`, 125, infoY + 5);
-  doc.text(`Address: ${data.ownerAddress}`, 125, infoY + 10, { maxWidth: 70 });
-  doc.text(`Pickup No: ${data.pickupNumber}`, 125, infoY + 20);
+  // --- Helper: Draw Header & Footer (Common for all pages) ---
+  const drawPageFrame = (pdf: jsPDF, pageNum: number, totalP: number) => {
+    // Header Line
+    pdf.setDrawColor(accentColor[0], accentColor[1], accentColor[2]);
+    pdf.setLineWidth(0.6);
+    pdf.line(margin, 22, pageWidth - margin, 22);
 
-  // --- 3. 2-Column Table Logic (Exact Colors & Centering) ---
-  const maxRowsPerSide = 24;
-  const leftRows = data.rows.slice(0, maxRowsPerSide);
-  const rightRows = data.rows.slice(maxRowsPerSide);
+    // Fixed Bottom Footer Section
+    const footerLineY = pageHeight - 20;
+    pdf.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    pdf.setLineWidth(0.6);
+    pdf.line(margin, footerLineY, pageWidth - margin, footerLineY);
 
-  const tableCommonConfig: any = {
-    theme: "grid",
-    startY: 75,
-    headStyles: { 
-      fillColor: [242, 242, 242], // #f2f2f2 background
-      textColor: [51, 51, 51],    // #333 text
-      fontStyle: "bold",
-      fontSize: 8,
-      halign: "center",
-      lineColor: [200, 200, 200],
-      lineWidth: 0.1,
-    },
-    bodyStyles: { 
-      fontSize: 8, 
-      halign: "center", 
-      textColor: [68, 68, 68], // #444
-      lineColor: [238, 238, 238], // #eeeeee
-      lineWidth: 0.1,
-    },
-    columnStyles: {
-      0: { fontStyle: "bold", textColor: [0, 0, 0], cellWidth: 10 }, // S.N Bold & Black
-    },
+    pdf.setFontSize(10);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    pdf.text(`${data.millName}`, margin, footerLineY + 8);
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setTextColor(100, 100, 100);
+    pdf.text("Authorized Signature", pageWidth - margin, footerLineY + 8, { align: "right" });
+    
+    pdf.setFontSize(8);
+    pdf.text(`Page ${pageNum} of ${totalP}`, pageWidth / 2, pageHeight - 5, { align: "center" });
   };
 
-  // Left Table
-  autoTable(doc, {
-    ...tableCommonConfig,
-    margin: { left: 15 },
-    tableWidth: 88,
-    head: [["S.N", "WIDTH", "THICK", "LENGTH", "PCS", "CFT"]],
-    body: leftRows.map((r: any, i: number) => [
-      i + 1, r.width, r.thick, r.length, r.piece, Number(r.total).toFixed(2)
-    ]),
-  });
+  // --- Logic: Data Splitting ---
+  let currentItemIndex = 0;
+  let pageNumber = 1;
 
-  // Right Table
-  if (rightRows.length > 0) {
+  // Function to calculate total pages (Approximate)
+  const totalPages = Math.ceil(totalItems <= 48 ? 1 : 1 + (totalItems - 48) / 64);
+
+  while (currentItemIndex < totalItems) {
+    if (pageNumber > 1) doc.addPage();
+    
+    drawPageFrame(doc, pageNumber, totalPages);
+
+    let startY = 28; // Default start for page 2+
+
+    if (pageNumber === 1) {
+      // --- Page 1 ONLY: Mill & Owner Details ---
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(22);
+      doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+      doc.text(`${data.millName.toUpperCase()}`, pageWidth / 2, 18, { align: "center" });
+
+      doc.setFontSize(9);
+      doc.setTextColor(60, 60, 60);
+      const infoY = 32;
+
+      doc.setFont("helvetica", "bold");
+      doc.text("MILL DETAILS", margin, infoY);
+      doc.setFont("helvetica", "normal");
+      doc.text(`GSTIN: ${data.gst || "N/A"}`, margin, infoY + 5);
+      doc.text(`Address: ${data.millAddress}`, margin, infoY + 10, { maxWidth: 80 });
+      doc.text(`Date: ${data.date}`, margin, infoY + 20);
+
+      doc.setFont("helvetica", "bold");
+      doc.text("OWNER DETAILS", 120, infoY);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Name: ${data.ownerName}`, 120, infoY + 5);
+      doc.text(`Address: ${data.ownerAddress}`, 120, infoY + 10, { maxWidth: 75 });
+      doc.text(`Vehicle: ${data.pickupNumber}`, 120, infoY + 20);
+
+      startY = 68;
+          // --- Tree Name Bar (Every Page) ---
+    doc.setFillColor(243, 244, 246);
+    doc.rect(margin, startY - 10, pageWidth - (margin * 2), 8, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
+    doc.text(`${data.treeName.toUpperCase()}`, pageWidth / 2, startY - 4.5, { align: "center" });
+    } else {
+      // --- Page 2+: Small Header for Continuity ---
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(22);
+      doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+      doc.text(`${data.millName.toUpperCase()}`, pageWidth / 2, 15, { align: "center" });
+    }
+
+
+
+    // Determine how many rows for this page
+    const rowsThisPageCount = pageNumber === 1 ? rowsPerPageFirst : rowsPerPageSubsequent;
+    const pageData = data.rows.slice(currentItemIndex, currentItemIndex + rowsThisPageCount * 2);
+    
+    const mid = Math.ceil(pageData.length / 2);
+    const leftRows = pageData.slice(0, mid);
+    const rightRows = pageData.slice(mid);
+
+    const tableConfig: any = {
+      theme: "grid",
+      startY: startY,
+      headStyles: { fillColor: primaryColor, textColor: 255, fontSize: 8.5, halign: "center" },
+      bodyStyles: { fontSize: 8.5, halign: "center", textColor: [40, 40, 40] },
+      columnStyles: { 0: { fontStyle: "bold", fillColor: [249, 250, 251], cellWidth: 10 } },
+    };
+
+    // Draw Left Table
     autoTable(doc, {
-      ...tableCommonConfig,
-      margin: { left: 108 },
+      ...tableConfig,
+      margin: { left: margin },
       tableWidth: 88,
-      head: [["S.N", "WIDTH", "THICK", "LENGTH", "PCS", "CFT"]],
-      body: rightRows.map((r: any, i: number) => [
-        maxRowsPerSide + i + 1, r.width, r.thick, r.length, r.piece, Number(r.total).toFixed(2)
+      head: [["S.N", "W", "T", "L", "PCS", "CFT"]],
+      body: leftRows.map((r: any, idx: number) => [
+        currentItemIndex + idx + 1, r.width, r.thick, r.length, r.piece, Number(r.total).toFixed(2)
       ]),
     });
+
+    // Draw Right Table
+    if (rightRows.length > 0) {
+      autoTable(doc, {
+        ...tableConfig,
+        margin: { left: 107 },
+        tableWidth: 88,
+        head: [["S.N", "W", "T", "L", "PCS", "CFT"]],
+        body: rightRows.map((r: any, idx: number) => [
+          currentItemIndex + mid + idx + 1, r.width, r.thick, r.length, r.piece, Number(r.total).toFixed(2)
+        ]),
+      });
+    }
+
+    currentItemIndex += pageData.length;
+
+    // --- Summary Box (Only on Final Page) ---
+    if (currentItemIndex >= totalItems) {
+      const summaryBoxY = pageHeight - 45;
+      doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+      doc.setFillColor(255, 255, 255);
+      doc.setLineWidth(0.4);
+      doc.roundedRect(125, summaryBoxY, 70, 20, 2, 2, "FD");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(60, 60, 60);
+      doc.text("Total Pieces:", 129, summaryBoxY + 7.5);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`${data.totalPieces}`, 190, summaryBoxY + 7.5, { align: "right" });
+
+      doc.setTextColor(60, 60, 60);
+      doc.text("Grand Total CFT:", 129, summaryBoxY + 14.5);
+      doc.setTextColor(highlightColor[0], highlightColor[1], highlightColor[2]);
+      doc.setFontSize(11);
+      doc.text(`${Number(data.totalCft).toFixed(2)}`, 190, summaryBoxY + 14.5, { align: "right" });
+    }
+    
+    pageNumber++;
   }
 
-  // --- 4. Summary Section (#2c3e50 border) ---
-  const summaryY = 250;
-  doc.setDrawColor(44, 62, 80);
-  doc.setLineWidth(0.3);
-  doc.rect(125, summaryY, 70, 20); // Summary Box
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(44, 62, 80);
-  doc.text("Total Pieces:", 128, summaryY + 7);
-  doc.text(`${data.totalPieces}`, 192, summaryY + 7, { align: "right" });
-
-  doc.text("Grand Total CFT:", 128, summaryY + 14);
-  doc.setTextColor(211, 84, 0); // Orange color #d35400
-  doc.text(`${Number(data.totalCft).toFixed(2)}`, 192, summaryY + 14, { align: "right" });
-
-  // --- 5. Footer ---
-  const footerY = 280;
-  doc.setDrawColor(44, 62, 80);
-  doc.setLineWidth(0.8);
-  doc.line(15, footerY, pageWidth - 15, footerY);
-
-  doc.setTextColor(44, 62, 80);
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "bold");
-  doc.text("AKASHMONI SAWN TIMBER", 15, footerY + 6);
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.text("Authorized Signatory", pageWidth - 15, footerY + 6, { align: "right" });
-
-  // Output
   window.open(URL.createObjectURL(doc.output("blob")));
 };

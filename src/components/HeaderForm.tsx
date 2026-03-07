@@ -61,6 +61,14 @@ export default function HeaderForm({ form, setForm }: Props) {
               value={form.millAddress}
               onChange={(e) => handleChange("millAddress", e.target.value)}
             />
+            <TextField
+              fullWidth
+              size="small"
+              label="Tree Name"
+              placeholder="Enter tree name"
+              value={form.treeName}
+              onChange={(e) => handleChange("treeName", e.target.value)}
+            />
 
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, md: 6 }}>
