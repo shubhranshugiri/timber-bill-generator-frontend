@@ -7,28 +7,29 @@ export const generatePDF = (data: any) => {
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
 
-  // Vibrant Branded Colors
-  const primaryColor = [30, 58, 138]; // Deep Royal Blue
-  const accentColor = [79, 70, 229];  // Indigo Vibrant
-  const highlightColor = [234, 88, 12]; // Vibrant Orange
+  // --- Wood-Themed Professional Colors ---
+  // Ye colors color print mein 'Timber' feel denge aur B&W print mein clear rahenge.
+  const primaryColor = [60, 42, 33];    // Deep Walnut Brown (Main branding)
+  const accentColor = [120, 75, 40];     // Golden Oak (Headers/Highlights)
+  const lightBgColor = [248, 245, 240];  // Paper/Wood Cream (Backgrounds)
+  const tableHeaderColor = [78, 52, 46]; // Darker Wood for Tables
 
   const margin = 15;
-  const rowsPerPageFirst = 24; // Pehle page pe 48 (Details ki wajah se)
-  const rowsPerPageSubsequent = 32; // Baaki pages pe 64 (Details hatne ki wajah se)
+  const rowsPerPageFirst = 24; 
+  const rowsPerPageSubsequent = 32; 
   
   const totalItems = data.rows.length;
 
-  // --- Helper: Draw Header & Footer (Common for all pages) ---
   const drawPageFrame = (pdf: jsPDF, pageNum: number, totalP: number) => {
-    // Header Line
+    // Header Line (Thin & Professional)
     pdf.setDrawColor(accentColor[0], accentColor[1], accentColor[2]);
-    pdf.setLineWidth(0.6);
+    pdf.setLineWidth(0.5);
     pdf.line(margin, 22, pageWidth - margin, 22);
 
     // Fixed Bottom Footer Section
     const footerLineY = pageHeight - 20;
     pdf.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    pdf.setLineWidth(0.6);
+    pdf.setLineWidth(0.5);
     pdf.line(margin, footerLineY, pageWidth - margin, footerLineY);
 
     pdf.setFontSize(10);
@@ -37,18 +38,16 @@ export const generatePDF = (data: any) => {
     pdf.text(`${data.millName}`, margin, footerLineY + 8);
 
     pdf.setFont("helvetica", "normal");
-    pdf.setTextColor(100, 100, 100);
+    pdf.setTextColor(80, 80, 80); // Neutral grey for B&W compatibility
     pdf.text("Authorized Signature", pageWidth - margin, footerLineY + 8, { align: "right" });
     
     pdf.setFontSize(8);
     pdf.text(`Page ${pageNum} of ${totalP}`, pageWidth / 2, pageHeight - 5, { align: "center" });
   };
 
-  // --- Logic: Data Splitting ---
   let currentItemIndex = 0;
   let pageNumber = 1;
 
-  // Function to calculate total pages (Approximate)
   const totalPages = Math.ceil(totalItems <= 48 ? 1 : 1 + (totalItems - 48) / 64);
 
   while (currentItemIndex < totalItems) {
@@ -56,7 +55,7 @@ export const generatePDF = (data: any) => {
     
     drawPageFrame(doc, pageNumber, totalPages);
 
-    let startY = 28; // Default start for page 2+
+    let startY = 28; 
 
     if (pageNumber === 1) {
       // --- Page 1 ONLY: Mill & Owner Details ---
@@ -66,7 +65,7 @@ export const generatePDF = (data: any) => {
       doc.text(`${data.millName.toUpperCase()}`, pageWidth / 2, 18, { align: "center" });
 
       doc.setFontSize(9);
-      doc.setTextColor(60, 60, 60);
+      doc.setTextColor(40, 40, 40);
       const infoY = 32;
 
       doc.setFont("helvetica", "bold");
@@ -84,24 +83,21 @@ export const generatePDF = (data: any) => {
       doc.text(`Vehicle: ${data.pickupNumber}`, 120, infoY + 20);
 
       startY = 68;
-          // --- Tree Name Bar (Every Page) ---
-    doc.setFillColor(243, 244, 246);
-    doc.rect(margin, startY - 10, pageWidth - (margin * 2), 8, "F");
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
-    doc.text(`${data.treeName.toUpperCase()}`, pageWidth / 2, startY - 4.5, { align: "center" });
-    } else {
-      // --- Page 2+: Small Header for Continuity ---
+
+      // --- Tree Name Bar ---
+      doc.setFillColor(lightBgColor[0], lightBgColor[1], lightBgColor[2]);
+      doc.rect(margin, startY - 10, pageWidth - (margin * 2), 8, "F");
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(22);
+      doc.setFontSize(14); // Slightly reduced for elegance
+      doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
+      doc.text(`${data.treeName.toUpperCase()}`, pageWidth / 2, startY - 4.5, { align: "center" });
+    } else {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
       doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
       doc.text(`${data.millName.toUpperCase()}`, pageWidth / 2, 15, { align: "center" });
     }
 
-
-
-    // Determine how many rows for this page
     const rowsThisPageCount = pageNumber === 1 ? rowsPerPageFirst : rowsPerPageSubsequent;
     const pageData = data.rows.slice(currentItemIndex, currentItemIndex + rowsThisPageCount * 2);
     
@@ -112,12 +108,23 @@ export const generatePDF = (data: any) => {
     const tableConfig: any = {
       theme: "grid",
       startY: startY,
-      headStyles: { fillColor: primaryColor, textColor: 255, fontSize: 8.5, halign: "center" },
-      bodyStyles: { fontSize: 8.5, halign: "center", textColor: [40, 40, 40] },
-      columnStyles: { 0: { fontStyle: "bold", fillColor: [249, 250, 251], cellWidth: 10 } },
+      headStyles: { 
+        fillColor: tableHeaderColor, 
+        textColor: 255, 
+        fontSize: 8.5, 
+        halign: "center",
+        lineWidth: 0.1 
+      },
+      bodyStyles: { 
+        fontSize: 8.5, 
+        halign: "center", 
+        textColor: [20, 20, 20],
+        lineColor: [200, 200, 200] 
+      },
+      columnStyles: { 0: { fontStyle: "bold", fillColor: [250, 248, 245], cellWidth: 10 } },
     };
 
-    // Draw Left Table
+    // Left Table
     autoTable(doc, {
       ...tableConfig,
       margin: { left: margin },
@@ -128,7 +135,7 @@ export const generatePDF = (data: any) => {
       ]),
     });
 
-    // Draw Right Table
+    // Right Table
     if (rightRows.length > 0) {
       autoTable(doc, {
         ...tableConfig,
@@ -143,13 +150,13 @@ export const generatePDF = (data: any) => {
 
     currentItemIndex += pageData.length;
 
-    // --- Summary Box (Only on Final Page) ---
+    // --- Summary Box ---
     if (currentItemIndex >= totalItems) {
       const summaryBoxY = pageHeight - 45;
       doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
       doc.setFillColor(255, 255, 255);
-      doc.setLineWidth(0.4);
-      doc.roundedRect(125, summaryBoxY, 70, 20, 2, 2, "FD");
+      doc.setLineWidth(0.5);
+      doc.roundedRect(125, summaryBoxY, 70, 20, 1, 1, "FD");
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
@@ -160,7 +167,7 @@ export const generatePDF = (data: any) => {
 
       doc.setTextColor(60, 60, 60);
       doc.text("Grand Total CFT:", 129, summaryBoxY + 14.5);
-      doc.setTextColor(highlightColor[0], highlightColor[1], highlightColor[2]);
+      doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]); // Using Primary Brown instead of Orange
       doc.setFontSize(11);
       doc.text(`${Number(data.totalCft).toFixed(2)}`, 190, summaryBoxY + 14.5, { align: "right" });
     }
