@@ -63,13 +63,14 @@ export default function HeaderForm({ form, setForm }: Props) {
             />
 
             <Grid container spacing={2}>
-              <Grid size={{ xs: 12, md: 6 }}>                <TextField
-                fullWidth
-                size="small"
-                label="GST Number"
-                value={form.gst}
-                onChange={(e) => handleChange("gst", e.target.value)}
-              />
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="GST Number"
+                  value={form.gst}
+                  onChange={(e) => handleChange("gst", e.target.value)}
+                />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
@@ -126,7 +127,6 @@ export default function HeaderForm({ form, setForm }: Props) {
             />
           </Box>
         </Grid>
-
       </Grid>
     </Paper>
   );

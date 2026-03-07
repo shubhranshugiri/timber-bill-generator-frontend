@@ -41,11 +41,8 @@ export default function App() {
       totalCft,
     };
 
-    const res = await generatePDF(payload);
+    await generatePDF(payload);
 
-    const url = window.URL.createObjectURL(res.data);
-
-    window.open(url);
   };
 
   return (
